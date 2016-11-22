@@ -20,6 +20,8 @@ public abstract class BarcodeScannerView extends FrameLayout implements Camera.P
     private Boolean mFlashState;
     private boolean mAutofocusState = true;
     private boolean mShouldScaleToFill = true;
+    private boolean mAnalysisPaused;
+    private int mAfterScannedMode = AfterScannedMode.STOP_CAMERA_PREVIEW;
 
     public BarcodeScannerView(Context context) {
         super(context);
@@ -37,6 +39,12 @@ public abstract class BarcodeScannerView extends FrameLayout implements Camera.P
         } finally {
             a.recycle();
         }
+    }
+
+    public int getAfterScannedMode() {return mAfterScannedMode;}
+
+    public void setAfterScannedMode(int afterScannedMode) {
+        mAfterScannedMode = afterScannedMode;
     }
 
     public final void setupLayout(CameraWrapper cameraWrapper) {
@@ -116,10 +124,23 @@ public abstract class BarcodeScannerView extends FrameLayout implements Camera.P
         }
     }
 
-    protected void resumeCameraPreview() {
+    public void resumeCameraPreview() {
         if(mPreview != null) {
             mPreview.showCameraPreview();
         }
+    }
+
+    public void stopAnalysis() {
+        mAnalysisPaused = true;
+    }
+
+    public void resumeAnalysis() {
+        mAnalysisPaused = false;
+        mCameraWrapper.mCamera.setOneShotPreviewCallback(this);
+    }
+
+    public boolean isAnalysisPaused() {
+        return mAnalysisPaused;
     }
 
     public synchronized Rect getFramingRectInPreview(int previewWidth, int previewHeight) {

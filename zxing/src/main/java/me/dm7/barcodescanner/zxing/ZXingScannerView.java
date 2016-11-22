@@ -24,6 +24,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
+import me.dm7.barcodescanner.core.AfterScannedMode;
 import me.dm7.barcodescanner.core.BarcodeScannerView;
 import me.dm7.barcodescanner.core.DisplayUtils;
 
@@ -90,7 +91,7 @@ public class ZXingScannerView extends BarcodeScannerView {
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        if(mResultHandler == null) {
+        if(mResultHandler == null || isAnalysisPaused()) {
             return;
         }
         
@@ -141,9 +142,18 @@ public class ZXingScannerView extends BarcodeScannerView {
                         // So we want to set result handler to null to discard subsequent calls to
                         // onPreviewFrame.
                         ResultHandler tmpResultHandler = mResultHandler;
-                        mResultHandler = null;
 
-                        stopCameraPreview();
+                        switch (getAfterScannedMode()) {
+
+                            case AfterScannedMode.NONE:
+                                break;
+                            case AfterScannedMode.STOP_ANALYSIS:
+                                stopAnalysis();
+                                break;
+                            case AfterScannedMode.STOP_CAMERA_PREVIEW:
+                                stopCameraPreview();
+                                break;
+                        }
                         if (tmpResultHandler != null) {
                             tmpResultHandler.handleResult(finalRawResult);
                         }
@@ -156,6 +166,12 @@ public class ZXingScannerView extends BarcodeScannerView {
             // TODO: Terrible hack. It is possible that this method is invoked after camera is released.
             Log.e(TAG, e.toString(), e);
         }
+    }
+
+    @Override
+    public void stopCameraPreview() {
+        mResultHandler = null;
+        super.stopCameraPreview();
     }
 
     public void resumeCameraPreview(ResultHandler resultHandler) {

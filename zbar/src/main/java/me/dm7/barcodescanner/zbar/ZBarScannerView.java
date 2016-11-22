@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 
+import me.dm7.barcodescanner.core.AfterScannedMode;
 import me.dm7.barcodescanner.core.BarcodeScannerView;
 import me.dm7.barcodescanner.core.DisplayUtils;
 
@@ -76,7 +77,7 @@ public class ZBarScannerView extends BarcodeScannerView {
 
     @Override
     public void onPreviewFrame(byte[] data, Camera camera) {
-        if(mResultHandler == null) {
+        if(mResultHandler == null || isAnalysisPaused()) {
             return;
         }
 
@@ -132,9 +133,18 @@ public class ZBarScannerView extends BarcodeScannerView {
                         // So we want to set result handler to null to discard subsequent calls to
                         // onPreviewFrame.
                         ResultHandler tmpResultHandler = mResultHandler;
-                        mResultHandler = null;
-                        
-                        stopCameraPreview();
+
+                        switch (getAfterScannedMode()) {
+
+                            case AfterScannedMode.NONE:
+                                break;
+                            case AfterScannedMode.STOP_ANALYSIS:
+                                stopAnalysis();
+                                break;
+                            case AfterScannedMode.STOP_CAMERA_PREVIEW:
+                                stopCameraPreview();
+                                break;
+                        }
                         if (tmpResultHandler != null) {
                             tmpResultHandler.handleResult(rawResult);
                         }
@@ -152,5 +162,11 @@ public class ZBarScannerView extends BarcodeScannerView {
     public void resumeCameraPreview(ResultHandler resultHandler) {
         mResultHandler = resultHandler;
         super.resumeCameraPreview();
+    }
+
+    @Override
+    public void stopCameraPreview() {
+        mResultHandler = null;
+        super.stopCameraPreview();
     }
 }
